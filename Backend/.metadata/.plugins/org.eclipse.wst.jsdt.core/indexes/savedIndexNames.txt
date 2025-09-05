@@ -1,0 +1,7 @@
+INDEX VERSION 1.4+D:\CICD-Practice\IMS\Backend\.metadata\.plugins\org.eclipse.wst.jsdt.core\indexes
+1229086021.index
+3625167699.index
+2496420294.index
+1389161859.index
+1450997462.index
+171134938.index

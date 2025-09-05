@@ -1,0 +1,5 @@
+package com.ims.jenkins.controller;
+
+public class ProductController {
+
+}

@@ -1,0 +1,5 @@
+package com.ims.jenkins.repository;
+
+public class ProductRepository {
+
+}
