@@ -6,7 +6,7 @@ pipeline {
         // ===== FRONTEND BUILD =====
         stage('Build Frontend') {
             steps {
-                dir('Frontend') {   // relative to Jenkins workspace
+                dir('Frontend/imsfrontend') {
                     bat 'npm install'
                     bat 'npm run build'
                 }
@@ -21,7 +21,7 @@ pipeline {
                     rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-frontend"
                 )
                 mkdir "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-frontend"
-                xcopy /E /I /Y "Frontend\\dist\\*" "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-frontend"
+                xcopy /E /I /Y "Frontend\\imsfrontend\\dist\\*" "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-frontend"
                 '''
             }
         }
@@ -29,7 +29,7 @@ pipeline {
         // ===== BACKEND BUILD =====
         stage('Build Backend') {
             steps {
-                dir('Backend') {   // relative to Jenkins workspace
+                dir('Backend/IMSBackend') {
                     bat 'mvn clean package'
                 }
             }
@@ -42,10 +42,7 @@ pipeline {
                 if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-backend.war" (
                     del /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-backend.war"
                 )
-                if exist "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-backend" (
-                    rmdir /S /Q "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-backend"
-                )
-                copy "Backend\\target\\*.war" "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-backend.war"
+                copy "Backend\\IMSBackend\\target\\*.war" "C:\\Program Files\\Apache Software Foundation\\Tomcat 10.1\\webapps\\ims-backend.war"
                 '''
             }
         }
