@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:2030/IMSBackend-0.0.1-SNAPSHOT/product";
+const API_URL = "http://localhost:2030/IMSBackend-0.0.1-SNAPSHOT/products";
 
 export const getAllProducts = () => axios.get(API_URL);
 export const getProductById = (id) => axios.get(`${API_URL}/${id}`);
