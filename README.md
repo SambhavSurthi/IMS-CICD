@@ -479,3 +479,183 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
    ```
 
 ---
+
+# **Lab-9 -> Docker FullStack Deployment**
+
+1. Create a Simple Full Stack application
+2. in frontend create a .env to fetch the backend URL. 
+3. in frontend in src create frontend.Dockerfile and add the following code
+```bash
+# Stage 1: Build
+FROM node:20-alpine AS build
+WORKDIR /<app name>
+
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve production
+FROM nginx:alpine
+COPY --from=build /<app name>/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+```
+4. in backend in applications.properties make sure these are added
+```bash
+spring.application.name=SpringBootProject
+server.port=2000
+
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.url=jdbc:mysql://mysqldb:3306/klustudentdb
+spring.datasource.username=root
+spring.datasource.password=docker
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
+```
+
+5. In root directory create backend.Dockerfile and add this code
+```bash
+# Stage 1: Build the app
+FROM eclipse-temurin:21-jdk AS builder
+
+WORKDIR /<appname>
+
+COPY mvnw .          
+COPY .mvn/ .mvn
+COPY pom.xml ./
+COPY src ./src
+
+# Give execute permission for mvnw
+RUN chmod +x mvnw
+
+RUN ./mvnw clean package -DskipTests
+
+# Stage 2: Run the app
+FROM eclipse-temurin:21-jdk
+
+WORKDIR /<appname>
+COPY --from=builder /<appname>/target/*.jar <appname>.jar
+
+EXPOSE 2000
+
+ENTRYPOINT ["java", "-jar", "<appname>.jar"]
+```
+
+6. Now create in parent directory below frontend and backend create docker-compose.yml and add this code
+
+```bash
+
+services:
+  mysqldb:
+    image: mysql:8
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: docker
+      MYSQL_DATABASE: <youtdbname gave in application.properties>
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - springboot-mysql-net
+
+  backend:
+    image: sambhavsurthi/docker-backend:latest
+    container_name: springboot
+    ports:
+      - "2025:2000"
+    depends_on:
+      - mysqldb
+    restart: on-failure
+    networks:
+      - springboot-mysql-net
+
+  frontend:
+    image: sambhavsurthi/docker-frontend:latest
+    container_name: react
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: on-failure
+    networks:
+      - springboot-mysql-net
+
+volumes:
+  mysql_data:
+
+networks:
+  springboot-mysql-net:
+
+```
+7. Push the code into the github(repo can be private)
+8. Goto repo settings> Secrets and varibales> Actions> New Repo Secrate> name= DOCKERHUB_USERNAME Secrte=<Your Username>
+9. Goto Dockerhub website login and goto settings>personal access token> create a new token> add any description> Optional change to read,Write, Delete and copy that token and in github create a new token with name=DOCKERHUB_TOKEN Secrte=<token You copied>
+10. save and goto actions tab
+11. select Docker Image from suggestins
+12. change name to docker-image.yml and add the following code
+```bash
+
+name: Docker Fullstack CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./STUDENTAPI-SPRINGBOOT
+          file: ./STUDENTAPI-SPRINGBOOT/backend.Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./STUDENTAPI-REACT
+          file: ./STUDENTAPI-REACT/frontend.Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/docker-frontend:lates
+
+```
+
+make change accordingly
+
+13. now push the code 
+14. now pull the code into vscode
+15. run these commands
+```bash
+docker-compose build
+docker-compose up -d
+docker logs -f springboot
+docker exec -it mysql-db mysql -uroot -pdocker
+docker-compose down
+
+```
+
+
